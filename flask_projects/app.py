@@ -1,13 +1,19 @@
 """Main module."""
 from flask import Flask, request, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
-
+import os
 app = Flask(__name__)
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:freezie123@localhost:5432/ecommerce"
 
+
+uri = os.getenv("DATABASE_URL")
+if uri and uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = uri
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:freezie123@localhost:5432/ecommerce"
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-
 
 # should create a 1 to many relationship (1 order with different items)
 # one
