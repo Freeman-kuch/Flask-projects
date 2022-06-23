@@ -40,7 +40,7 @@ class Items(db.Model):
         return f"<item %s price %d  description %s>" % (self.name, self.price, self.description)
 
 
-# db.create_all()
+db.create_all()
 
 @app.route("/home")
 def home():
