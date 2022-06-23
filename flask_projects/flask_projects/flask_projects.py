@@ -88,7 +88,7 @@ def update_item():
     for key, value in update_req.items():
         setattr(update_data, key, value)  # fetches an attribute and changes the value
         db.session.commit()
-    return jsonify({"message": "item successfully Updated"}), 204
+    return jsonify({"message": "item successfully Updated"})
 
 @app.route("/home/orders", methods=["PATCH"])
 def update_order():
