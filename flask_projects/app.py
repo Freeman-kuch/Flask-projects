@@ -59,7 +59,7 @@ def orders():
     order = cart.query.all()
     if not order:
         return jsonify({"message": "you do not have any item in your cart"})
-    return render_template("home.html", cart=cart.query.filter_by(cart.id).all())
+    return render_template("home.html", cart=cart.query.order_by(cart.id).all())
 
 @app.route("/home/item", methods=["POST"])  # ALL SEt
 def create_item():
