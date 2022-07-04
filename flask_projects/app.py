@@ -54,60 +54,32 @@ def category(section):
 def item(item):
     return render_template("home.html", Items=Items.query.filter_by(name=item).all())
 
-@app.route("/home/orders")
-def orders():
-    order = cart.query.all()
-    if not order:
-        return jsonify({"message": "you do not have any item in your cart"})
-    return render_template("home.html", cart=cart.query.order_by(cart.id).all())
+@app.route("/home/item", methods=["POST", "DELETE", "PATCH"])  # ALL SEt
+def items_methods():
+    if request.method == "POST":
+        item_req = request.get_json()
+        for item in item_req:  # in cases of multiple items to be added to DB
+            item_data = {"name": item.get("name"),
+                         "category": item.get("category"),
+                         "sub_category": item.get("sub_category"),
+                         "price": item.get("price"),
+                         "description": item.get("description")
+                         }
+            new_item = Items(**item_data)
+            db.session.add(new_item)
+            db.session.commit()
+        return jsonify({"message": "new item successfully added"}), 201
 
-@app.route("/home/item", methods=["POST"])  # ALL SEt
-def create_item():
-    item_req = request.get_json()
-    for item in item_req:  # in cases of multiple items to be added to DB
-        item_data = {"name": item.get("name"),
-                     "category": item.get("category"),
-                     "sub_category": item.get("sub_category"),
-                     "price": item.get("price"),
-                     "description": item.get("description")
-                     }
-        new_item = Items(**item_data)
-        db.session.add(new_item)
-        db.session.commit()
-    return jsonify({"message": "new item successfully added"}), 201
+    elif request.method == "PATCH":
+        update_req = request.get_json()  # loads the user input
+        update_id = update_req.get("id")  # fetch the data in id(because all items have uniques ID) from user input
+        update_data = Items.query.get_or_404(update_id,
+                                             description="The item entered doesn't exist")  # now you either have the item you want to query or you get a 404 error
+        for key, value in update_req.items():
+            setattr(update_data, key, value)  # fetches an attribute and changes the value
+            db.session.commit()
+        return jsonify({"message": "item successfully Updated"})
 
-@app.route("/home/orders", methods=["POST"])
-def create_order():
-    orders_req = request.get_json()
-    for order in orders_req:  # in cases of multiple orders to be added to cart!
-        order_data = {"item_id": order.get("item_id")}
-        new_order = cart(**order_data)
-        db.session.add(new_order)
-        db.session.commit()
-    return jsonify({"message": "new item successfully added to your cart!"}), 201
-
-@app.route("/home/item", methods=["PATCH"])  # ALL SET
-def update_item():
-    update_req = request.get_json()  # loads the user input
-    update_id = update_req.get("id")  # fetch the data in id(because all items have uniques ID) from user input
-    update_data = Items.query.get_or_404(update_id, description="The item entered doesn't exist")  # now you either have the item you want to query or you get a 404 error
-    for key, value in update_req.items():
-        setattr(update_data, key, value)  # fetches an attribute and changes the value
-        db.session.commit()
-    return jsonify({"message": "item successfully Updated"})
-
-@app.route("/home/orders", methods=["PATCH"])
-def update_order():
-    order_req = request.get_json()
-    order_id = order_req.get("id")
-    update_data = cart.query.get_or_404(order_id, description="The item entered doesn't exist")
-    for key, value in order_req.items():
-        setattr(update_data, key, value)
-        db.session.commit()
-    return jsonify({"message": "item successfully Updated"})
-
-@app.route("/home/item", methods=["DELETE"])  # ALL SET
-def delete_item():
     delete_req = request.get_json()  # loads the user input
     delete_id = delete_req.get("id")  # fetch the data in id from user input
     delete_data = Items.query.get_or_404(delete_id, description="The item entered doesn't exist")
@@ -115,14 +87,37 @@ def delete_item():
     db.session.commit()
     return jsonify({"message": "item successfully deleted"})
 
-@app.route("/home/orders", methods=["DELETE"])
-def delete_order():
-    order = request.get_json()
-    order_id = order.get("id")
-    delete_ord = cart.query.get_or_404(order_id, description="You don't have this order in your Cart!")
-    db.session.delete(delete_ord)
-    db.session.commit()
-    return jsonify({"message": "item successfully been removed from your Cart!"})
+
+@app.route("/home/orders", methods=["GET", "POST", "PATCH", "DELETE"])
+def orders():
+    if request.method == "POST":
+        orders_req = request.get_json()
+        for order in orders_req:  # in cases of multiple orders to be added to cart!
+            order_data = {"item_id": order.get("item_id")}
+            new_order = cart(**order_data)
+            db.session.add(new_order)
+            db.session.commit()
+        return jsonify({"message": "new item successfully added to your cart!"}), 201
+    elif request.method == "PATCH":
+        order_req = request.get_json()
+        order_id = order_req.get("id")
+        update_data = cart.query.get_or_404(order_id, description="The item entered doesn't exist")
+        for key, value in order_req.items():
+            setattr(update_data, key, value)
+            db.session.commit()
+        return jsonify({"message": "item successfully Updated"})
+    elif request.method == "DELETE":
+        order = request.get_json()
+        order_id = order.get("id")
+        delete_ord = cart.query.get_or_404(order_id, description="You don't have this order in your Cart!")
+        db.session.delete(delete_ord)
+        db.session.commit()
+        return jsonify({"message": "item successfully been removed from your Cart!"})
+    order = cart.query.all()
+    if not order:
+        return jsonify({"message": "you do not have any item in your cart"})
+    return render_template("home.html", cart=cart.query.order_by(cart.id).all())  # supposed to change the Item un the html for loop
+
 
 
 if __name__ == '__main__':
